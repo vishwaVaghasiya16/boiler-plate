@@ -662,7 +662,7 @@ const loginByGoogle = async (req, res) => {
     if (!user) {
       const newUser = {
         email,
-        profilePicture: picture ? [picture] : [],
+        profileImage: picture ? [picture] : [],
         provider: enums.authProviderEnum.GOOGLE,
         providerId,
         isVerified: true,
@@ -673,7 +673,7 @@ const loginByGoogle = async (req, res) => {
       await userService.update(
         { email },
         {
-          profilePicture: picture ? [picture] : user.profilePicture,
+          profileImage: picture ? [picture] : user.profileImage,
           provider: enums.authProviderEnum.GOOGLE,
           providerId,
         }
