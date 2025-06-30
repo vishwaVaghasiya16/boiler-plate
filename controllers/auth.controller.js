@@ -861,8 +861,9 @@ const loginByApple = async (req, res) => {
       ...userWithoutSensitiveInfo
     } = user.toObject();
 
-    return successResponse({
+    return apiResponse({
       res,
+      status: true,
       statusCode: StatusCodes.OK,
       data: {
         token: generatedToken,
