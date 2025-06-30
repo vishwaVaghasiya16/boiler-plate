@@ -33,6 +33,10 @@ const envVarsSchema = Joi.object({
   SMTP_PASSWORD: Joi.string().required(),
   EMAIL_FROM: Joi.string().required(),
 
+  GOOGLE_CLIENT_ID: Joi.string().description("google client id"),
+  GOOGLE_CLIENT_SECRET: Joi.string().description("google client secret"),
+  GOOGLE_REDIRECT_URL: Joi.string().description("google redirect url"),
+
   DIGITAL_OCEAN_DIRNAME: Joi.string().required(),
   DIGITAL_OCEAN_SPACES_ACCESS_KEY: Joi.string().required(),
   DIGITAL_OCEAN_SPACES_SECRET_KEY: Joi.string().required(),
@@ -72,6 +76,11 @@ export default {
   jwt: {
     secretKey: envVars.JWT_SECRET_KEY,
     expiresIn: envVars.JWT_TOKEN_EXPIRES_IN || "7d",
+  },
+  google: {
+    clientId: envVars.GOOGLE_CLIENT_ID,
+    clientSecret: envVars.GOOGLE_CLIENT_SECRET,
+    redirectUrl: envVars.GOOGLE_REDIRECT_URL,
   },
   otpExpiryDurationSeconds: envVars.OTP_EXPIRY_DURATION_SECONDS || 300,
   cloud: {

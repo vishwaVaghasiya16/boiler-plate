@@ -82,5 +82,5 @@ export default {
   findByIdAndDelete,
   deleteOne,
   updateSingleField,
-  updateOne
+  updateOne,
 };

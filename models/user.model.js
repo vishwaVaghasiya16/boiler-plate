@@ -9,7 +9,7 @@ const schema = new mongoose.Schema(
   {
     email: {
       type: String,
-      default: null
+      default: null,
     },
     backupEmail: {
       type: String,

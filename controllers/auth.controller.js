@@ -7,7 +7,28 @@ import { StatusCodes } from "http-status-codes";
 import userService from "../services/user.service.js";
 import emailService from "../services/email.service.js";
 import jwt from "jsonwebtoken";
-import admin from "../firebase/config.firebase.js";
+import firebaseAdmin from "firebase-admin";
+import User from "../models/user.model.js";
+import { OAuth2Client } from "google-auth-library";
+
+firebaseAdmin.initializeApp({
+  credential: firebaseAdmin.credential.cert({
+    type: "service_account",
+    project_id: "flutterrepomodule",
+    private_key_id: "b00bb829e88bb3f9b07ac48266c7bbe42c1de1a4",
+    private_key:
+      "-----BEGIN PRIVATE KEY-----\nMIIEvgIBADANBgkqhkiG9w0BAQEFAASCBKgwggSkAgEAAoIBAQCpgmp2v2J6YbxR\nDI4cXyWnId6V5jZ2Y75qRc//Px/1XXF+iqb2rsHta5u3uVuyYrdUlLSfSrNL4nls\nGP7rbOtViSqJRkBCs7kXzklJahgXmPWtYdYmtt38BwQws0TRHaL9nmwMhYRXWt87\nR6ExmrT9Nf6VrE7yiF/xXLdSvnhDrn4Pug5Y1ftqkepN+Goz0sblyJCgv68boEuA\niZcvu9XWhwyXNFEfTTQv4DLDTYP4VHHuL1QdtixDskS0wH1NV41KOEMoDGpOuM2n\nqFygKNJVhyHWyF3HJejvJNQtE/TypS5ArIHbudMasHCttz7l5Ulq4+4IGierCKk0\nals8YgRbAgMBAAECggEAAZQ77qhAwBgZ+31M85m1TZXEr4vJ9RdfxjipQ9zwLMZ2\nkLG09XZSSyZl+HOrFYHS6GBMQHGfMvVEoUuoUEQe+xiAg2/amGR5NG4RA7SPzeR4\nYWmYZ5rrfXYJRXTeDr6ibo9jvUgfH/syOiikKUSiK/utR/Knd53qmuJ8uLIah7Lc\nCymJhCoqIItOLsWe+NkCrmnP24pNE1etalUYhoRGKX/LY1VTJwGr4HBSQDGXZ+SV\nZen4tVs3gwDmQUN5xHdSdmMBI/a/M8iT8x7lEQ90oYrk2FMl4s/66lQFEBUAN90t\nKnkvKvnJgbT9CDxyjtQlAkWvPCEEj32vQyUocuye3QKBgQDSYgB3qE26BDtpoVEM\ngNgf/Vt1ZXv/IhkkBgtkm+HvnTgQK+nBfcFfklc1KAWUJWn+5PsSCrt2SiDOprbx\n+XLpdXvkL+pQKWBDsSepe7pyE28FQKridAO8evHOcgNniSyPG2uFERmxRKPHfY9R\nwTzK0ZM+VP+dAv2+m41pnR0GjwKBgQDOQ5navuxaQySB5mTM1ZS+NmySzVV11mhv\nY6KHccKNNi6JDNpljytvF3oGZ/q9F3r+4g01kQTUflKpxgaYj5wgSLGqq9zX4RZl\nm5LcrLQdKpnw4m+U652SAwIBtFQl5QHwbrL8ThqVXRNFFYmBredAkrwIC+U1HBgE\n4GRY87wrdQKBgFFYS0346XTPRhmloizvdKGJ2N8fij4v9QCUxbr0+vsnExJNqGiE\nM0y8zLNk8iNCBCXma52iQLGQH/dHRt1w0hmqr2ifjj3Igcwqp2dEy+Zn1Tl2s5wz\nt24dK3njY6WYyH3c4EnnPsPoAluUFOJLkTHqrsAfJWaUTYBxrM/1S8/JAoGBAJZQ\njX7sRDJDXAeOb0cXHx6/asBRA0asyc7jPT6XmMBwC9m0lDQO8ggzg6nHfOLwiaHV\n+upelLaGmJdAyO3FOnIMh+1o8bghQMErbwuCkH/w297AJbDRRDN0HbJASFKVYaRm\nB+n2wUi4W6Ks31ix8yULyhvTD2Z04swq+vYYKblBAoGBALWU0C5/cgO5OA+QatWg\n1l95CVjNse1tfz/PfGQygN0mEJ6fcaLv2uSDcfdK8bYzUDrfQb2KnmgMc9qtxzLV\nCkK6qzGhx8bh9RxlB5Oh7sJ81HsV5o6muEsfqTWpmuCaOuV6Awq9Hb+P5V4uzkA3\nuL7Y2+bxKlcd36aOTsOZhuZH\n-----END PRIVATE KEY-----\n",
+    client_email:
+      "firebase-adminsdk-fbsvc@flutterrepomodule.iam.gserviceaccount.com",
+    client_id: "111337120115631152596",
+    auth_uri: "https://accounts.google.com/o/oauth2/auth",
+    token_uri: "https://oauth2.googleapis.com/token",
+    auth_provider_x509_cert_url: "https://www.googleapis.com/oauth2/v1/certs",
+    client_x509_cert_url:
+      "https://www.googleapis.com/robot/v1/metadata/x509/firebase-adminsdk-fbsvc%40flutterrepomodule.iam.gserviceaccount.com",
+    universe_domain: "googleapis.com",
+  }),
+});
 
 // For verify token
 const verifyToken = async (req, res) => {
@@ -206,12 +227,33 @@ const verifyEmailOtp = async (req, res) => {
       );
     }
 
+    const token = jwt.sign(
+      { userId: user._id, email: user.email },
+      config.jwt.secretKey,
+      {
+        expiresIn: config.jwt.expiresIn || "7days",
+      }
+    );
+
+    const {
+      password: _,
+      otp: __,
+      otpExpiresAt: ___,
+      expiresIn: ____,
+      secretKey: _____,
+      recoveryCode: ______,
+      ...userWithoutSensitiveInfo
+    } = user.toObject();
+
     return apiResponse({
       res,
       statusCode: StatusCodes.OK,
       status: true,
       message: "OTP verified successfully!",
-      data: null,
+      data: {
+        token,
+        user: userWithoutSensitiveInfo,
+      },
     });
   } catch (error) {
     console.error("Error in verifyOTP:", error);
@@ -464,6 +506,16 @@ const loginByEmail = async (req, res) => {
       }
     );
 
+    const {
+      password: _,
+      otp: __,
+      otpExpiresAt: ___,
+      expiresIn: ____,
+      secretKey: _____,
+      recoveryCode: ______,
+      ...userWithoutSensitiveInfo
+    } = user.toObject();
+
     return apiResponse({
       res,
       statusCode: StatusCodes.OK,
@@ -471,10 +523,12 @@ const loginByEmail = async (req, res) => {
       message: "Login successful",
       data: {
         token,
-        user,
+        user: userWithoutSensitiveInfo, // Send the modified user object without sensitive fields
       },
     });
   } catch (error) {
+    console.log(error);
+
     return apiResponse({
       res,
       statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
@@ -652,60 +706,93 @@ const resetPassword = async (req, res) => {
 // For google login/registration
 const loginByGoogle = async (req, res) => {
   try {
-    const { token } = req.body;
-    const decodedToken = await admin.auth().verifyIdToken(token);
+    const { idToken } = req.body;
 
-    const { email, picture, uid: providerId } = decodedToken;
-
-    let user = await userService.findOne({ email, isDeleted: false });
-
-    if (!user) {
-      const newUser = {
-        email,
-        profileImage: picture ? [picture] : [],
-        provider: enums.authProviderEnum.GOOGLE,
-        providerId,
-        isVerified: true,
-      };
-
-      user = await userService.create(newUser);
-    } else {
-      await userService.update(
-        { email },
-        {
-          profileImage: picture ? [picture] : user.profileImage,
-          provider: enums.authProviderEnum.GOOGLE,
-          providerId,
-        }
-      );
+    if (!idToken) {
+      return apiResponse({
+        res,
+        status: false,
+        statusCode: StatusCodes.BAD_REQUEST,
+        message: "ID token is required",
+      });
     }
 
-    const jwtToken = jwt.sign(
-      { userId: user._id, email: user.email },
-      config.jwt.secretKey,
-      {
-        expiresIn: config.jwt.expiresIn || "7days",
+    const client = new OAuth2Client({
+      clientId: config.google.clientId,
+      clientSecret: config.google.clientSecret,
+      redirectUri: config.google.redirectUrl,
+    });
+
+    const ticket = await client.verifyIdToken({
+      idToken: idToken,
+    });
+
+    const { email, sub: googleId, picture } = ticket.getPayload();
+    if (!email || !googleId) {
+      return apiResponse({
+        res,
+        status: false,
+        statusCode: StatusCodes.UNAUTHORIZED,
+        message: "Invalid token or payload.",
+      });
+    }
+
+    const username = email.split("@")[0].replace(".", " ");
+    let user;
+
+    // ✅ If no user found check by email
+    if (!user) {
+      user = await User.findOne({ email, isVerified: true, isDeleted: false });
+
+      if (!user) {
+        user = await User.create({
+          email: email,
+          username: username,
+          password: null,
+          profileImage: picture,
+          provider: enums.authProviderEnum.GOOGLE,
+          providerId: googleId,
+          role: enums.userRoleEnum.USER,
+          isVerified: true,
+        });
+      } else {
+        user.providerId = googleId;
+        user.provider = enums.authProviderEnum.GOOGLE;
+        user.password = null;
+        await user.save();
       }
-    );
+    }
+
+    // 🔐 Generate token
+    const generatedToken = await helper.generateToken({ userId: user._id });
+
+    const {
+      password: _,
+      otp: __,
+      otpExpiresAt: ___,
+      expiresIn: ____,
+      secretKey: _____,
+      recoveryCode: ______,
+      ...userWithoutSensitiveInfo
+    } = user.toObject();
 
     return apiResponse({
       res,
-      statusCode: StatusCodes.OK,
       status: true,
-      message: "Google login successful",
+      statusCode: StatusCodes.OK,
       data: {
-        token: jwtToken,
-        user,
+        token: generatedToken,
+        user: userWithoutSensitiveInfo,
       },
+      message: "User logged in successfully",
     });
   } catch (error) {
-    console.error("Error during Google login:", error);
+    console.log(error);
     return apiResponse({
       res,
-      statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
       status: false,
-      message: "Invalid Token or expired.",
-      data: null,
+      statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
+      message: "Token is expired or invalid.",
     });
   }
 };
@@ -713,60 +800,83 @@ const loginByGoogle = async (req, res) => {
 // For apple login/registration
 const loginByApple = async (req, res) => {
   try {
-    const { token } = req.body;
-    const decodedToken = await admin.auth().verifyIdToken(token);
+    const { idToken } = req.body;
 
-    const { email, uid: providerId } = decodedToken;
-
-    let user = await userService.findOne({ email, isDeleted: false });
-
-    if (!user) {
-      const generatedEmail = email || `${providerId}@appleid.com`;
-
-      const newUser = {
-        email: generatedEmail,
-        provider: enums.authProviderEnum.APPLE,
-        providerId,
-        isVerified: true,
-      };
-
-      user = await userService.create(newUser);
-    } else {
-      await userService.update(
-        { email },
-        {
-          provider: enums.authProviderEnum.APPLE,
-          providerId,
-        }
-      );
+    if (!idToken) {
+      return apiResponse({
+        res,
+        status: false,
+        statusCode: StatusCodes.BAD_REQUEST,
+        message: "ID token is required",
+      });
     }
 
-    const jwtToken = jwt.sign(
-      { userId: user._id, email: user.email },
-      config.jwt.secretKey,
-      {
-        expiresIn: config.jwt.expiresIn || "7days",
-      }
-    );
+    // ✅ Verify the Firebase ID token
+    const decodedToken = await firebaseAdmin.auth().verifyIdToken(idToken);
+    if (!decodedToken) {
+      return apiResponse({
+        res,
+        status: false,
+        statusCode: StatusCodes.UNAUTHORIZED,
+        message: "Invalid authentication token",
+      });
+    }
 
-    return apiResponse({
+    const { email, uid: appleId, picture } = decodedToken;
+    let user;
+
+    // ✅ Fallback: no matching deviceId, use email logic
+    if (!user) {
+      user = await User.findOne({ email, isVerified: true, isDeleted: false });
+
+      if (!user) {
+        user = await User.create({
+          email: email,
+          username: email?.split("@")[0]?.replace(".", " ") || "apple_user",
+          password: null,
+          profileImage: picture || null,
+          provider: enums.authProviderEnum.APPLE,
+          providerId: appleId,
+          role: enums.userRoleEnum.USER,
+          isVerified: true,
+        });
+      } else {
+        user.providerId = appleId;
+        user.provider = enums.authProviderEnum.APPLE;
+        user.password = null;
+        await user.save();
+      }
+    }
+
+    // 🔐 Generate token
+    const generatedToken = await helper.generateToken({ userId: user._id });
+
+    const {
+      password: _,
+      otp: __,
+      otpExpiresAt: ___,
+      expiresIn: ____,
+      secretKey: _____,
+      recoveryCode: ______,
+      ...userWithoutSensitiveInfo
+    } = user.toObject();
+
+    return successResponse({
       res,
       statusCode: StatusCodes.OK,
-      status: true,
-      message: "Apple login successful",
       data: {
-        token: jwtToken,
-        user,
+        token: generatedToken,
+        user: userWithoutSensitiveInfo,
       },
+      message: "User logged in successfully",
     });
   } catch (error) {
-    console.error("Error during Apple login:", error);
+    console.error("Error verifying token:", error.message);
     return apiResponse({
       res,
-      statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
       status: false,
-      message: "Invalid token or expired.",
-      data: null,
+      statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
+      message: "Token is expired or invalid.",
     });
   }
 };

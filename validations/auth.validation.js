@@ -64,13 +64,13 @@ const resetPassword = {
 
 const loginByApple = {
   body: Joi.object({
-    token: Joi.string().required(),
+    idToken: Joi.string().required(),
   }),
 };
 
 const loginByGoogle = {
   body: Joi.object({
-    token: Joi.string().required(),
+    idToken: Joi.string().required(),
   }),
 };
 
